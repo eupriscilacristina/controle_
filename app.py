@@ -296,7 +296,8 @@ def render_sectioned_tab(sheet_name, df, display_name):
         edited_df = st.data_editor(
             df, use_container_width=True,
             height=min(500, 35 * len(df) + 80),
-            hide_index=True, num_rows="dynamic",
+            hide_index=True,
+            column_config={c: st.column_config.TextColumn(c, disabled=False) for c in df.columns},
             key=f"editor_{sheet_name}",
         )
         col1, col2, _ = st.columns([1, 1, 4])
@@ -357,7 +358,8 @@ def render_sectioned_tab(sheet_name, df, display_name):
         edited = st.data_editor(
             chunk, use_container_width=True,
             height=min(350, 35 * len(chunk) + 80),
-            hide_index=True, num_rows="dynamic",
+            hide_index=True,
+            column_config={c: st.column_config.TextColumn(c, disabled=False) for c in chunk.columns},
             key=f"editor_{sheet_name}_{clean_title}",
         )
         all_edited.append(edited)
@@ -577,12 +579,16 @@ def render_data_tab(sheet_name, df, display_name):
         st.info("Esta aba não contém dados.")
         return
 
+    col_cfg = {}
+    for c in df.columns:
+        col_cfg[c] = st.column_config.TextColumn(c, disabled=False)
+
     edited_df = st.data_editor(
         df,
         use_container_width=True,
         height=min(500, 35 * len(df) + 80),
         hide_index=True,
-        num_rows="dynamic",
+        column_config=col_cfg,
         key=f"editor_{sheet_name}",
     )
 
