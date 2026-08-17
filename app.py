@@ -411,28 +411,51 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
 
 def _rebuild_sectioned_df(sheet_name, original_df, edited_chunk, section_title, display_name):
     try:
-        if section_title == display_name:
-            before_sections = original_df.copy()
-            first_marker = None
-            for idx, val in before_sections.iloc[:, 0].items():
-                val_str = str(val).strip()
-                val_upper = val_str.upper()
-                other_empty = before_sections.iloc[idx, 1:].astype(str).str.strip().replace("", pd.NA).dropna().empty
-                if val_str and other_empty and val_upper != "COLABORADOR" and "@" not in val_upper and "GTCON" not in val_upper and len(val_str) > 1:
-                    first_marker = idx
-                    break
-            if first_marker is not None:
-                header = original_df.iloc[:1]
-                result = pd.concat([header, edited_chunk], ignore_index=True)
-                rest = original_df.iloc[first_marker:]
-                result = pd.concat([result, rest], ignore_index=True)
-            else:
-                header = original_df.iloc[:1]
-                result = pd.concat([header, edited_chunk], ignore_index=True)
-            return result
-        else:
+        section_markers = []
+        for idx, val in original_df.iloc[:, 0].items():
+            val_str = str(val).strip()
+            val_upper = val_str.upper()
+            other_empty = original_df.iloc[idx, 1:].astype(str).str.strip().replace("", pd.NA).dropna().empty
+            if val_str and other_empty and val_upper != "COLABORADOR" and "@" not in val_upper and "GTCON" not in val_upper and len(val_str) > 1:
+                section_markers.append((idx, val_str))
+
+        if not section_markers:
             return edited_chunk
-    except Exception:
+
+        first_marker_idx = section_markers[0][0]
+        section_ranges = []
+
+        if section_title == display_name:
+            end_idx = first_marker_idx
+            section_ranges.append(("first", 0, end_idx))
+        else:
+            for i, (start_idx, title) in enumerate(section_markers):
+                end_idx = section_markers[i + 1][0] if i + 1 < len(section_markers) else len(original_df)
+                clean = title.title()
+                section_ranges.append((clean, start_idx, end_idx))
+
+        parts = []
+        edited_applied = False
+        for name, start, end in section_ranges:
+            if name == "first" and section_title == display_name:
+                header = original_df.iloc[:1]
+                parts.append(header)
+                parts.append(edited_chunk)
+                edited_applied = True
+            elif name == section_title and section_title != display_name:
+                parts.append(original_df.iloc[start:start + 1])
+                parts.append(edited_chunk)
+                edited_applied = True
+            else:
+                parts.append(original_df.iloc[start:end])
+
+        if not edited_applied:
+            parts.append(edited_chunk)
+
+        result = pd.concat(parts, ignore_index=True)
+        return result
+    except Exception as e:
+        st.error(f"Erro ao reconstruir: {e}")
         return None
 
 
