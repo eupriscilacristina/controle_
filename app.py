@@ -190,6 +190,13 @@ def inject_custom_css():
         border-radius: 10px;
         overflow: hidden;
     }
+    [data-testid="stDataFrame"] {
+        pointer-events: auto !important;
+    }
+    [data-testid="stDataFrame"] td,
+    [data-testid="stDataFrame"] th {
+        pointer-events: auto !important;
+    }
 
     h1, h2, h3 {
         color: #e8ecf1 !important;
@@ -691,21 +698,19 @@ def main():
     with tab_controle:
         st.markdown("## 📁 Controle de Acessos por Aba")
         tabs_labels = [SHEET_DISPLAY_NAMES.get(s, s) for s in all_sheets]
-        selected_sheet_name = st.selectbox("Selecione a aba", tabs_labels, key="ctrl_sheet_select")
+        sub_tabs = st.tabs(tabs_labels)
 
-        selected_key = None
-        for s in all_sheets:
-            if SHEET_DISPLAY_NAMES.get(s, s) == selected_sheet_name:
-                selected_key = s
-                break
-
-        if selected_key:
-            display = SHEET_DISPLAY_NAMES.get(selected_key, selected_key)
-            sectioned_sheets = ["VAGOS", "DP"]
-            if selected_key.upper().startswith("IMPLANTA") or selected_key in sectioned_sheets:
-                render_sectioned_tab(selected_key, data.get(selected_key, pd.DataFrame()), display)
-            else:
-                render_data_tab(selected_key, data.get(selected_key, pd.DataFrame()), display)
+        for i, (sub_tab, sheet_name) in enumerate(zip(sub_tabs, all_sheets)):
+            with sub_tab:
+                display = SHEET_DISPLAY_NAMES.get(sheet_name, sheet_name)
+                sectioned_sheets = ["VAGOS", "DP"]
+                raw_df = data.get(sheet_name, pd.DataFrame()).copy()
+                for c in raw_df.columns:
+                    raw_df[c] = raw_df[c].astype(str)
+                if sheet_name.upper().startswith("IMPLANTA") or sheet_name in sectioned_sheets:
+                    render_sectioned_tab(sheet_name, raw_df, display)
+                else:
+                    render_data_tab(sheet_name, raw_df, display)
 
     with tab_novo:
         render_new_record(data, all_sheets)
