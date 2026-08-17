@@ -555,28 +555,7 @@ def render_new_record(data, all_sheets):
 # HEADER
 # =============================================================================
 def render_header(data, all_sheets):
-    total_registros = sum(len(data.get(s, [])) for s in all_sheets)
-    total_abas = len(all_sheets)
-
-    st.markdown(f'''
-    <div class="topbar">
-        <div class="topbar-left">
-            <span style="font-size:1.5rem">🔐</span>
-            <span class="topbar-brand">GTCON</span>
-        </div>
-        <div class="topbar-right">
-            <span class="topbar-info">📋 {total_registros} registros</span>
-            <span class="topbar-info">📁 {total_abas} abas</span>
-            <span class="topbar-copyright">GTCON Brasil &copy; 2026</span>
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
-
-    col1, col2 = st.columns([10, 1])
-    with col2:
-        if st.button("🚪 Sair"):
-            st.session_state.authenticated = False
-            st.rerun()
+    pass
 
 
 # =============================================================================
@@ -594,8 +573,6 @@ def main():
         st.error("❌ Arquivo de dados não encontrado. Verifique o caminho: `Controle_/Acessos GTCON.xlsx`")
         return
 
-    render_header(data, all_sheets)
-
     total_registros = sum(len(data.get(s, [])) for s in all_sheets)
     total_abas = len(all_sheets)
 
@@ -608,6 +585,7 @@ def main():
             <span style="color:#8892a4; font-size:0.85rem;">📋 {total_registros} registros</span>
             <span style="color:#8892a4; font-size:0.85rem;">📁 {total_abas} abas</span>
         </div>
+        <div style="text-align:right; color:#5a6577; font-size:0.75rem; margin-top:2px;">GTCON Brasil &copy; 2026</div>
         """, unsafe_allow_html=True)
     st.markdown("Sistema integrado de gerenciamento e visualização de acessos corporativos.")
     st.markdown("")
