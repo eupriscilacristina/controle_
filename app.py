@@ -258,15 +258,15 @@ def load_data():
     return data, sheets
 
 
-def render_implantacao_tab(sheet_name, df, display_name):
+def render_sectioned_tab(sheet_name, df, display_name):
     st.markdown(f"### 📋 {display_name}")
 
     section_markers = []
     for idx, val in df.iloc[:, 0].items():
-        val_str = str(val).strip().upper()
-        if val_str and val_str != "COLABORADOR" and not any(
-            c in val_str for c in ["@", "GTCON", "GTCO"]
-        ) and len(val_str) > 3 and df.iloc[idx, 1:].astype(str).str.strip().replace("", pd.NA).dropna().empty:
+        val_str = str(val).strip()
+        val_upper = val_str.upper()
+        other_cols_empty = df.iloc[idx, 1:].astype(str).str.strip().replace("", pd.NA).dropna().empty
+        if val_str and other_cols_empty and val_upper != "COLABORADOR" and "@" not in val_upper and "GTCON" not in val_upper and len(val_str) > 1:
             section_markers.append((idx, val_str))
 
     if not section_markers:
@@ -295,21 +295,14 @@ def render_implantacao_tab(sheet_name, df, display_name):
         chunk = df.iloc[start_idx + 1:end_idx]
         chunk = chunk[chunk.iloc[:, 0].astype(str).str.strip() != ""]
         chunk = chunk[chunk.iloc[:, 0].astype(str).str.strip().str.upper() != "COLABORADOR"]
+        chunk = chunk[chunk.iloc[:, 0].astype(str).str.strip().str.upper() != title.upper()]
         if not chunk.empty:
             chunk = chunk.reset_index(drop=True)
         sections.append((title, chunk))
 
     all_edited = []
     for title, chunk in sections:
-        clean_title = title.replace("IMPLANTA\u00c7\u00c3O", "Implantação -").replace("IMPLANTACAO", "Implantação -")
-        if "CONT" in title:
-            clean_title = "Implantação - Contábil"
-        elif "FISCAL" in title:
-            clean_title = "Implantação - Fiscal"
-        elif "DP" in title:
-            clean_title = "Implantação - DP"
-        else:
-            clean_title = "Implantação - Domínio"
+        clean_title = title.title()
 
         st.markdown(f"""
         <div style="text-align:center; padding:10px 0; margin:16px 0 8px;
@@ -672,8 +665,9 @@ def main():
         for i, (sub_tab, sheet_name) in enumerate(zip(sub_tabs, all_sheets)):
             with sub_tab:
                 display = SHEET_DISPLAY_NAMES.get(sheet_name, sheet_name)
-                if sheet_name.upper().startswith("IMPLANTA"):
-                    render_implantacao_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
+                sectioned_sheets = ["VAGOS", "DP"]
+                if sheet_name.upper().startswith("IMPLANTA") or sheet_name in sectioned_sheets:
+                    render_sectioned_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
                 else:
                     render_data_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
 
