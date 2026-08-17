@@ -243,15 +243,14 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns([2, 3, 2])
-    with c2:
-        password = st.text_input("Senha", type="password", placeholder="Senha...", key="login_pwd", label_visibility="collapsed")
-        if st.button("Entrar", use_container_width=True, type="primary"):
-            if password == SENHA_ADM:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("Senha incorreta. Acesso negado.")
+    password = st.text_input("Senha", type="password", placeholder="Senha...", key="login_pwd", label_visibility="collapsed")
+
+    if st.button("Entrar", use_container_width=True, type="primary"):
+        if password == SENHA_ADM:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("Senha incorreta. Acesso negado.")
 
     return False
 
