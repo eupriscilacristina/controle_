@@ -290,6 +290,18 @@ def render_sectioned_tab(sheet_name, df, display_name):
         return
 
     sections = []
+    first_marker_idx = section_markers[0][0]
+
+    if first_marker_idx > 0:
+        header_row = df.iloc[0]
+        data_before = df.iloc[1:first_marker_idx]
+        data_before = data_before[data_before.iloc[:, 0].astype(str).str.strip() != ""]
+        if not data_before.empty:
+            data_before = data_before.copy()
+            data_before.columns = [str(c).strip() for c in data_before.columns]
+            data_before = data_before.reset_index(drop=True)
+            sections.append((display_name, data_before))
+
     for i, (start_idx, title) in enumerate(section_markers):
         end_idx = section_markers[i + 1][0] if i + 1 < len(section_markers) else len(df)
         chunk = df.iloc[start_idx + 1:end_idx]
@@ -302,7 +314,10 @@ def render_sectioned_tab(sheet_name, df, display_name):
 
     all_edited = []
     for title, chunk in sections:
-        clean_title = title.title()
+        if title == display_name:
+            clean_title = display_name
+        else:
+            clean_title = title.title()
 
         st.markdown(f"""
         <div style="text-align:center; padding:10px 0; margin:16px 0 8px;
@@ -320,7 +335,7 @@ def render_sectioned_tab(sheet_name, df, display_name):
             chunk, use_container_width=True,
             height=min(350, 35 * len(chunk) + 80),
             hide_index=True, num_rows="dynamic",
-            key=f"editor_{sheet_name}_{title}",
+            key=f"editor_{sheet_name}_{clean_title}",
         )
         all_edited.append(edited)
 
