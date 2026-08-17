@@ -422,41 +422,34 @@ def _rebuild_sectioned_df(sheet_name, original_df, edited_chunk, section_title, 
         if not section_markers:
             return edited_chunk
 
-        first_marker_idx = section_markers[0][0]
-        section_ranges = []
+        all_section_names = []
+        first_idx = section_markers[0][0]
+        if first_idx > 0:
+            all_section_names.append((display_name, 0, first_idx))
 
-        if section_title == display_name:
-            end_idx = first_marker_idx
-            section_ranges.append(("first", 0, end_idx))
-        else:
-            for i, (start_idx, title) in enumerate(section_markers):
-                end_idx = section_markers[i + 1][0] if i + 1 < len(section_markers) else len(original_df)
-                clean = title.title()
-                section_ranges.append((clean, start_idx, end_idx))
+        for i, (start_idx, title) in enumerate(section_markers):
+            end_idx = section_markers[i + 1][0] if i + 1 < len(section_markers) else len(original_df)
+            clean = title.title()
+            all_section_names.append((clean, start_idx, end_idx))
 
         parts = []
-        edited_applied = False
-        for name, start, end in section_ranges:
-            if name == "first" and section_title == display_name:
-                header = original_df.iloc[:1]
-                parts.append(header)
-                parts.append(edited_chunk)
-                edited_applied = True
-            elif name == section_title and section_title != display_name:
-                parts.append(original_df.iloc[start:start + 1])
-                parts.append(edited_chunk)
-                edited_applied = True
+        for name, start, end in all_section_names:
+            if name == section_title:
+                if section_title == display_name:
+                    header = original_df.iloc[:1]
+                    parts.append(header)
+                    parts.append(edited_chunk)
+                else:
+                    parts.append(original_df.iloc[start:start + 1])
+                    parts.append(edited_chunk)
             else:
                 parts.append(original_df.iloc[start:end])
-
-        if not edited_applied:
-            parts.append(edited_chunk)
 
         result = pd.concat(parts, ignore_index=True)
         return result
     except Exception as e:
         st.error(f"Erro ao reconstruir: {e}")
-        return None
+        return original_df
 
 
 def save_sheet(sheet_name, df):
