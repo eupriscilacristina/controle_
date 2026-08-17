@@ -341,12 +341,99 @@ def render_sectioned_tab(sheet_name, df, display_name):
             st.info("Nenhum registro nesta seção.")
             continue
 
-        st.dataframe(
+        event = st.dataframe(
             chunk, use_container_width=True,
             height=min(350, 35 * len(chunk) + 80),
             hide_index=True,
             key=f"df_{sheet_name}_{clean_title}",
+            on_select="rerun",
+            selection_mode="single-row",
         )
+
+        selected_rows = event.selection.rows if event and event.selection else []
+
+        tab_edit, tab_add = st.tabs(["✏️ Editar", "➕ Novo Registro"])
+
+        with tab_edit:
+            if not selected_rows:
+                st.info("Clique em uma linha na tabela acima para editar.")
+            else:
+                row_idx = selected_rows[0]
+                st.markdown(f"**Editando linha {row_idx + 1}**")
+                with st.form(key=f"edit_{sheet_name}_{clean_title}_{row_idx}", clear_on_submit=False):
+                    cols = st.columns(min(len(chunk.columns), 4))
+                    edited_values = {}
+                    for i, col in enumerate(chunk.columns):
+                        c = cols[i % len(cols)]
+                        current_val = str(chunk.iloc[row_idx][col])
+                        edited_values[col] = c.text_input(f"{col}", value=current_val, key=f"ed_{sheet_name}_{clean_title}_{row_idx}_{col}")
+
+                    col_s, col_d = st.columns(2)
+                    with col_s:
+                        if st.form_submit_button("💾 Salvar", type="primary"):
+                            for col, val in edited_values.items():
+                                chunk.at[row_idx, col] = val
+                            full_df = _rebuild_sectioned_df(sheet_name, data.get(sheet_name, pd.DataFrame()), chunk, clean_title, display_name)
+                            if full_df is not None and save_sheet(sheet_name, full_df):
+                                st.success("✅ Registro atualizado!")
+                                st.cache_data.clear()
+                                st.rerun()
+                    with col_d:
+                        if st.form_submit_button("🗑️ Excluir Esta Linha"):
+                            chunk = chunk.drop(index=row_idx).reset_index(drop=True)
+                            full_df = _rebuild_sectioned_df(sheet_name, data.get(sheet_name, pd.DataFrame()), chunk, clean_title, display_name)
+                            if full_df is not None and save_sheet(sheet_name, full_df):
+                                st.success("✅ Registro excluído!")
+                                st.cache_data.clear()
+                                st.rerun()
+
+        with tab_add:
+            with st.form(key=f"add_{sheet_name}_{clean_title}", clear_on_submit=True):
+                cols = st.columns(min(len(chunk.columns), 4))
+                new_values = {}
+                for i, col in enumerate(chunk.columns):
+                    c = cols[i % len(cols)]
+                    new_values[col] = c.text_input(f"{col}", key=f"add_{sheet_name}_{clean_title}_{col}")
+
+                if st.form_submit_button("💾 Salvar Registro", type="primary"):
+                    has_content = any(v.strip() for v in new_values.values())
+                    if not has_content:
+                        st.warning("Preencha ao menos um campo.")
+                    else:
+                        new_row = pd.DataFrame([new_values])
+                        updated_chunk = pd.concat([chunk, new_row], ignore_index=True)
+                        full_df = _rebuild_sectioned_df(sheet_name, data.get(sheet_name, pd.DataFrame()), updated_chunk, clean_title, display_name)
+                        if full_df is not None and save_sheet(sheet_name, full_df):
+                            st.success("✅ Registro adicionado!")
+                            st.cache_data.clear()
+                            st.rerun()
+
+
+def _rebuild_sectioned_df(sheet_name, original_df, edited_chunk, section_title, display_name):
+    try:
+        if section_title == display_name:
+            before_sections = original_df.copy()
+            first_marker = None
+            for idx, val in before_sections.iloc[:, 0].items():
+                val_str = str(val).strip()
+                val_upper = val_str.upper()
+                other_empty = before_sections.iloc[idx, 1:].astype(str).str.strip().replace("", pd.NA).dropna().empty
+                if val_str and other_empty and val_upper != "COLABORADOR" and "@" not in val_upper and "GTCON" not in val_upper and len(val_str) > 1:
+                    first_marker = idx
+                    break
+            if first_marker is not None:
+                header = original_df.iloc[:1]
+                result = pd.concat([header, edited_chunk], ignore_index=True)
+                rest = original_df.iloc[first_marker:]
+                result = pd.concat([result, rest], ignore_index=True)
+            else:
+                header = original_df.iloc[:1]
+                result = pd.concat([header, edited_chunk], ignore_index=True)
+            return result
+        else:
+            return edited_chunk
+    except Exception:
+        return None
 
 
 def save_sheet(sheet_name, df):
