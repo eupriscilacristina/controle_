@@ -680,7 +680,7 @@ def main():
         for i, (sub_tab, sheet_name) in enumerate(zip(sub_tabs, all_sheets)):
             with sub_tab:
                 display = SHEET_DISPLAY_NAMES.get(sheet_name, sheet_name)
-                sectioned_sheets = ["VAGOS", "DP"]
+                sectioned_sheets = ["VAGOS"]
                 if sheet_name.upper().startswith("IMPLANTA") or sheet_name in sectioned_sheets:
                     render_sectioned_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
                 else:
