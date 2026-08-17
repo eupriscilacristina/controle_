@@ -7,6 +7,7 @@ from datetime import datetime, date
 import os
 import io
 import json
+import base64
 
 # =============================================================================
 # CONFIGURAÇÃO
@@ -204,6 +205,14 @@ def inject_custom_css():
     .stMarkdown p {
         color: #c5cdd8;
     }
+    .login-container .stTextInput {
+        max-width: 220px;
+        margin: 0 auto;
+    }
+    .login-container .stTextInput input {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -211,6 +220,17 @@ def inject_custom_css():
 # =============================================================================
 # AUTENTICAÇÃO
 # =============================================================================
+def _get_logo_b64():
+    logo_path = os.path.join(os.path.dirname(__file__), "logo_login.png")
+    if os.path.exists(logo_path):
+        with open(logo_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    jpg_path = os.path.join(os.path.dirname(__file__), "NIT- 1.jpg")
+    if os.path.exists(jpg_path):
+        with open(jpg_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
+
 def check_password():
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
@@ -218,13 +238,22 @@ def check_password():
     if st.session_state.authenticated:
         return True
 
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.markdown('<div class="login-title">🔐 GTCON</div>', unsafe_allow_html=True)
-    st.markdown('<div class="login-subtitle">Sistema de Controle de Acessos</div>', unsafe_allow_html=True)
+    logo_b64 = _get_logo_b64()
+    logo_html = ""
+    if logo_b64:
+        logo_html = f'<div style="text-align:center; margin-bottom:12px;"><img src="data:image/png;base64,{logo_b64}" style="max-width:150px; border-radius:8px;" /></div>'
 
-    password = st.text_input("Senha de Acesso", type="password", placeholder="Digite sua senha...", key="login_pwd")
+    st.markdown(f"""
+    <div class="login-container">
+        {logo_html}
+        <div class="login-title">🔐 GTCON</div>
+        <div class="login-subtitle">Sistema de Controle de Acessos</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    password = st.text_input("Senha de Acesso", type="password", placeholder="Digite sua senha...", key="login_pwd", label_visibility="collapsed")
+
+    col1, col2, col3 = st.columns([2, 3, 2])
     with col2:
         if st.button("Entrar", use_container_width=True, type="primary"):
             if password == SENHA_ADM:
