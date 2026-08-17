@@ -535,6 +535,10 @@ def render_sidebar(data, all_sheets):
         st.markdown("")
         st.markdown("")
         st.markdown("")
+        st.markdown("")
+        st.markdown("")
+        st.markdown("")
+        st.markdown("")
         st.markdown("GTCON Brasil © 2026")
 
 
