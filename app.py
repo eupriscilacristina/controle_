@@ -105,6 +105,17 @@ def inject_custom_css():
     div[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0e1117 0%, #151b28 100%);
         border-right: 1px solid #1e2533;
+        display: flex;
+        flex-direction: column;
+    }
+    div[data-testid="stSidebar"] > div {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    .sidebar-footer {
+        margin-top: auto;
+        padding-bottom: 16px;
     }
     div[data-testid="stSidebar"] .stMarkdown h1,
     div[data-testid="stSidebar"] .stMarkdown h2,
@@ -529,17 +540,7 @@ def render_sidebar(data, all_sheets):
         st.metric("Total de Registros", total_registros)
         st.metric("Total de Abas", len(all_sheets))
 
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("")
-        st.markdown("GTCON Brasil © 2026")
+        st.markdown('<div class="sidebar-footer">GTCON Brasil © 2026</div>', unsafe_allow_html=True)
 
 
 # =============================================================================
