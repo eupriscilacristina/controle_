@@ -438,6 +438,11 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
                             st.cache_data.clear()
                             st.rerun()
 
+    st.markdown("---")
+    if st.button("🚪 Sair", key=f"logout_sectioned_{sheet_name}"):
+        st.session_state.authenticated = False
+        st.rerun()
+
 
 def _rebuild_sectioned_df(sheet_name, original_df, edited_chunk, section_title, display_name):
     try:
@@ -769,7 +774,7 @@ def render_data_tab(sheet_name, df, display_name):
                     st.rerun()
 
     st.markdown("---")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("💾 Salvar Tabela Inteira", key=f"save_all_{sheet_name}", type="primary"):
             if save_sheet(sheet_name, df):
@@ -779,6 +784,10 @@ def render_data_tab(sheet_name, df, display_name):
     with col2:
         if st.button("🔄 Recarregar", key=f"reload_{sheet_name}"):
             st.cache_data.clear()
+            st.rerun()
+    with col3:
+        if st.button("🚪 Sair", key=f"logout_{sheet_name}"):
+            st.session_state.authenticated = False
             st.rerun()
 
 
