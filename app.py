@@ -263,6 +263,13 @@ def load_data():
                     pad_left = pad_total // 2
                     pad_right = pad_total - pad_left
                     df.at[idx, first_col] = "\u00a0" * pad_left + "ROMULO" + "\u00a0" * pad_right
+        if s == "VAGOS":
+            rename_map = {}
+            for c in df.columns:
+                if "Unnamed" in str(c):
+                    rename_map[c] = "ONEDRIVE"
+            if rename_map:
+                df = df.rename(columns=rename_map)
         data[s] = df
     return data, sheets
 
