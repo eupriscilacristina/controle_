@@ -156,7 +156,7 @@ def inject_custom_css():
     }
 
     .login-container {
-        max-width: 420px;
+        max-width: 300px;
         margin: 80px auto;
         padding: 40px;
         background: linear-gradient(145deg, #0e1117 0%, #1a1f2e 100%);
@@ -205,14 +205,6 @@ def inject_custom_css():
     .stMarkdown p {
         color: #c5cdd8;
     }
-    .login-container .stTextInput {
-        max-width: 220px;
-        margin: 0 auto;
-    }
-    .login-container .stTextInput input {
-        font-size: 0.9rem;
-        padding: 6px 10px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -251,10 +243,9 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    password = st.text_input("Senha de Acesso", type="password", placeholder="Digite sua senha...", key="login_pwd", label_visibility="collapsed")
-
-    col1, col2, col3 = st.columns([2, 3, 2])
-    with col2:
+    c1, c2, c3 = st.columns([2, 3, 2])
+    with c2:
+        password = st.text_input("Senha", type="password", placeholder="Senha...", key="login_pwd", label_visibility="collapsed")
         if st.button("Entrar", use_container_width=True, type="primary"):
             if password == SENHA_ADM:
                 st.session_state.authenticated = True
@@ -262,7 +253,6 @@ def check_password():
             else:
                 st.error("Senha incorreta. Acesso negado.")
 
-    st.markdown('</div>', unsafe_allow_html=True)
     return False
 
 
