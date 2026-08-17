@@ -459,68 +459,26 @@ def render_data_tab(sheet_name, df, display_name):
         st.info("Esta aba não contém dados.")
         return
 
-    col_search, col_spacer = st.columns([3, 1])
-    with col_search:
-        search_term = st.text_input(
-            "🔍 Buscar", placeholder="Filtrar registros...",
-            key=f"search_{sheet_name}"
-        )
-
-    filtered_df = df.copy()
-    if search_term:
-        mask = filtered_df.apply(lambda row: row.astype(str).str.contains(search_term, case=False, na=False).any(), axis=1)
-        filtered_df = filtered_df[mask]
-
-    st.markdown(f"**{len(filtered_df)} registro(s) encontrado(s)**")
-
     edited_df = st.data_editor(
-        filtered_df,
+        df,
         use_container_width=True,
-        height=min(450, 35 * len(filtered_df) + 50),
+        height=min(500, 35 * len(df) + 80),
         hide_index=True,
         num_rows="dynamic",
         key=f"editor_{sheet_name}",
     )
 
-    if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
-        if save_sheet(sheet_name, edited_df):
-            st.success("✅ Alterações salvas com sucesso!")
-            st.cache_data.clear()
-            st.rerun()
-
-    st.markdown("---")
-    st.markdown("#### ➕ Adicionar Novo Registro")
-    with st.form(key=f"add_form_{sheet_name}", clear_on_submit=True):
-        cols = st.columns(min(len(df.columns), 4))
-        new_values = {}
-        for i, col in enumerate(df.columns):
-            c = cols[i % len(cols)]
-            new_values[col] = c.text_input(f"{col}", key=f"add_{sheet_name}_{col}")
-
-        submitted = st.form_submit_button("💾 Salvar Registro", type="primary")
-        if submitted:
-            has_content = any(v.strip() for v in new_values.values())
-            if not has_content:
-                st.warning("Preencha ao menos um campo.")
-            else:
-                new_row = pd.DataFrame([new_values])
-                updated_df = pd.concat([df, new_row], ignore_index=True)
-                if save_sheet(sheet_name, updated_df):
-                    st.success("✅ Registro adicionado com sucesso!")
-                    st.cache_data.clear()
-                    st.rerun()
-
-    st.markdown("---")
-    st.markdown("#### 🗑️ Remover Último Registro")
-    if st.button(f"Excluir último registro de {display_name}", key=f"del_{sheet_name}"):
-        if len(df) > 0:
-            updated_df = df.iloc[:-1]
-            if save_sheet(sheet_name, updated_df):
-                st.success("Registro removido.")
+    col1, col2, col3 = st.columns([1, 1, 4])
+    with col1:
+        if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
+            if save_sheet(sheet_name, edited_df):
+                st.success("✅ Alterações salvas com sucesso!")
                 st.cache_data.clear()
                 st.rerun()
-        else:
-            st.warning("Nenhum registro para remover.")
+    with col2:
+        if st.button("🔄 Recarregar", key=f"reload_{sheet_name}"):
+            st.cache_data.clear()
+            st.rerun()
 
 
 # =============================================================================
