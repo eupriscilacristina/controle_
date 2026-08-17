@@ -243,6 +243,17 @@ def load_data():
     for s in sheets:
         df = pd.read_excel(xls, sheet_name=s)
         df = df.fillna("")
+        if s == "ACESSOS SERVIDOR":
+            drop_cols = [c for c in df.columns if c in ["Unnamed: 3", "Unnamed: 6"]]
+            df = df.drop(columns=drop_cols, errors="ignore")
+            rename_map = {}
+            for c in df.columns:
+                if "EXACT.1" in c:
+                    rename_map[c] = c.replace("EXACT.1", "EXACT.ADM")
+                elif "GTCON.1" in c:
+                    rename_map[c] = c.replace("GTCON.1", "GTCON.ADM")
+            if rename_map:
+                df = df.rename(columns=rename_map)
         data[s] = df
     return data, sheets
 
@@ -461,12 +472,21 @@ def render_data_tab(sheet_name, df, display_name):
         filtered_df = filtered_df[mask]
 
     st.markdown(f"**{len(filtered_df)} registro(s) encontrado(s)**")
-    st.dataframe(
+
+    edited_df = st.data_editor(
         filtered_df,
         use_container_width=True,
         height=min(450, 35 * len(filtered_df) + 50),
-        hide_index=True
+        hide_index=True,
+        num_rows="dynamic",
+        key=f"editor_{sheet_name}",
     )
+
+    if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
+        if save_sheet(sheet_name, edited_df):
+            st.success("✅ Alterações salvas com sucesso!")
+            st.cache_data.clear()
+            st.rerun()
 
     st.markdown("---")
     st.markdown("#### ➕ Adicionar Novo Registro")
