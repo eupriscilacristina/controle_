@@ -381,7 +381,7 @@ def render_dashboard(data, all_sheets):
             st.plotly_chart(fig_bar, use_container_width=True)
 
     with col_right:
-        st.markdown("### 🥧 Distribuição por Departamento")
+        st.markdown("### 📊 Distribuição por Departamento")
         if dept_data:
             fig_pie = px.pie(
                 pd.DataFrame({"D": list(dept_data.keys()), "V": list(dept_data.values())}),
