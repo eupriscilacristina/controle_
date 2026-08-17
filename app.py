@@ -281,7 +281,7 @@ def load_data():
     return data, sheets
 
 
-def render_sectioned_tab(sheet_name, df, display_name):
+def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
     st.markdown(f"### 📋 {display_name}")
 
     section_markers = []
@@ -373,7 +373,7 @@ def render_sectioned_tab(sheet_name, df, display_name):
                         if st.form_submit_button("💾 Salvar", type="primary"):
                             for col, val in edited_values.items():
                                 chunk.at[row_idx, col] = val
-                            full_df = _rebuild_sectioned_df(sheet_name, data.get(sheet_name, pd.DataFrame()), chunk, clean_title, display_name)
+                            full_df = _rebuild_sectioned_df(sheet_name, all_data.get(sheet_name, pd.DataFrame()) if all_data else df, chunk, clean_title, display_name)
                             if full_df is not None and save_sheet(sheet_name, full_df):
                                 st.success("✅ Registro atualizado!")
                                 st.cache_data.clear()
@@ -381,7 +381,7 @@ def render_sectioned_tab(sheet_name, df, display_name):
                     with col_d:
                         if st.form_submit_button("🗑️ Excluir Esta Linha"):
                             chunk = chunk.drop(index=row_idx).reset_index(drop=True)
-                            full_df = _rebuild_sectioned_df(sheet_name, data.get(sheet_name, pd.DataFrame()), chunk, clean_title, display_name)
+                            full_df = _rebuild_sectioned_df(sheet_name, all_data.get(sheet_name, pd.DataFrame()) if all_data else df, chunk, clean_title, display_name)
                             if full_df is not None and save_sheet(sheet_name, full_df):
                                 st.success("✅ Registro excluído!")
                                 st.cache_data.clear()
@@ -840,7 +840,7 @@ def main():
                 for c in raw_df.columns:
                     raw_df[c] = raw_df[c].astype(str)
                 if sheet_name.upper().startswith("IMPLANTA") or sheet_name in sectioned_sheets:
-                    render_sectioned_tab(sheet_name, raw_df, display)
+                    render_sectioned_tab(sheet_name, raw_df, display, all_data=data)
                 else:
                     render_data_tab(sheet_name, raw_df, display)
 
