@@ -258,6 +258,93 @@ def load_data():
     return data, sheets
 
 
+def render_implantacao_tab(sheet_name, df, display_name):
+    st.markdown(f"### 📋 {display_name}")
+
+    section_markers = []
+    for idx, val in df.iloc[:, 0].items():
+        val_str = str(val).strip().upper()
+        if val_str and val_str != "COLABORADOR" and not any(
+            c in val_str for c in ["@", "GTCON", "GTCO"]
+        ) and len(val_str) > 3 and df.iloc[idx, 1:].astype(str).str.strip().replace("", pd.NA).dropna().empty:
+            section_markers.append((idx, val_str))
+
+    if not section_markers:
+        edited_df = st.data_editor(
+            df, use_container_width=True,
+            height=min(500, 35 * len(df) + 80),
+            hide_index=True, num_rows="dynamic",
+            key=f"editor_{sheet_name}",
+        )
+        col1, col2, _ = st.columns([1, 1, 4])
+        with col1:
+            if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
+                if save_sheet(sheet_name, edited_df):
+                    st.success("✅ Alterações salvas com sucesso!")
+                    st.cache_data.clear()
+                    st.rerun()
+        with col2:
+            if st.button("🔄 Recarregar", key=f"reload_{sheet_name}"):
+                st.cache_data.clear()
+                st.rerun()
+        return
+
+    sections = []
+    for i, (start_idx, title) in enumerate(section_markers):
+        end_idx = section_markers[i + 1][0] if i + 1 < len(section_markers) else len(df)
+        chunk = df.iloc[start_idx + 1:end_idx]
+        chunk = chunk[chunk.iloc[:, 0].astype(str).str.strip() != ""]
+        chunk = chunk[chunk.iloc[:, 0].astype(str).str.strip().str.upper() != "COLABORADOR"]
+        if not chunk.empty:
+            chunk = chunk.reset_index(drop=True)
+        sections.append((title, chunk))
+
+    all_edited = []
+    for title, chunk in sections:
+        clean_title = title.replace("IMPLANTA\u00c7\u00c3O", "Implantação -").replace("IMPLANTACAO", "Implantação -")
+        if "CONT" in title:
+            clean_title = "Implantação - Contábil"
+        elif "FISCAL" in title:
+            clean_title = "Implantação - Fiscal"
+        elif "DP" in title:
+            clean_title = "Implantação - DP"
+        else:
+            clean_title = "Implantação - Domínio"
+
+        st.markdown(f"""
+        <div style="text-align:center; padding:10px 0; margin:16px 0 8px;
+            background:linear-gradient(135deg,#1a1f2e,#0e1117);
+            border:1px solid #2a3040; border-radius:10px;">
+            <span style="color:#60a5fa; font-size:1rem; font-weight:600;">📂 {clean_title}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if chunk.empty:
+            st.info("Nenhum registro nesta seção.")
+            continue
+
+        edited = st.data_editor(
+            chunk, use_container_width=True,
+            height=min(350, 35 * len(chunk) + 80),
+            hide_index=True, num_rows="dynamic",
+            key=f"editor_{sheet_name}_{title}",
+        )
+        all_edited.append(edited)
+
+    col1, col2, _ = st.columns([1, 1, 4])
+    with col1:
+        if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
+            combined = pd.concat(all_edited, ignore_index=True)
+            if save_sheet(sheet_name, combined):
+                st.success("✅ Alterações salvas com sucesso!")
+                st.cache_data.clear()
+                st.rerun()
+    with col2:
+        if st.button("🔄 Recarregar", key=f"reload_{sheet_name}"):
+            st.cache_data.clear()
+            st.rerun()
+
+
 def save_sheet(sheet_name, df):
     try:
         with pd.ExcelWriter(EXCEL_PATH, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
@@ -585,7 +672,10 @@ def main():
         for i, (sub_tab, sheet_name) in enumerate(zip(sub_tabs, all_sheets)):
             with sub_tab:
                 display = SHEET_DISPLAY_NAMES.get(sheet_name, sheet_name)
-                render_data_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
+                if sheet_name.upper().startswith("IMPLANTA"):
+                    render_implantacao_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
+                else:
+                    render_data_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
 
     with tab_novo:
         render_new_record(data, all_sheets)
