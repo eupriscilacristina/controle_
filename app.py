@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="GTCON - Controle de Acessos",
     page_icon="🔐",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 EXCEL_PATH = os.path.join(os.path.dirname(__file__), "Controle_", "Acessos GTCON.xlsx")
@@ -102,35 +102,56 @@ def inject_custom_css():
         font-size: 0.95rem;
     }
 
-    div[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0e1117 0%, #151b28 100%);
-        border-right: 1px solid #1e2533;
+    .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #0e1117 0%, #1a1f2e 100%);
+        border: 1px solid #2a3040;
+        border-radius: 12px;
+        margin-bottom: 20px;
     }
-    div[data-testid="stSidebar"] section[data-testid="stSidebarUserContent"],
-    div[data-testid="stSidebar"] .block-container,
-    div[data-testid="stSidebar"] [data-testid="stVerticalBlock"],
-    div[data-testid="stSidebarContent"],
-    div[data-testid="stSidebar"] > div {
-        height: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
-    div[data-testid="stSidebar"] .stMarkdown h1,
-    div[data-testid="stSidebar"] .stMarkdown h2,
-    div[data-testid="stSidebar"] .stMarkdown h3 {
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .topbar-brand {
+        font-size: 1.2rem;
+        font-weight: 700;
         color: #e8ecf1;
     }
-    .sidebar-footer {
-        margin-top: auto !important;
-        padding: 16px 0;
-        text-align: center;
+    .topbar-info {
+        color: #8892a4;
+        font-size: 0.82rem;
+        background: rgba(37,99,235,0.1);
+        padding: 4px 12px;
+        border-radius: 16px;
+    }
+    .topbar-copyright {
         color: #5a6577;
-        font-size: 0.78rem;
+        font-size: 0.75rem;
     }
-    div[data-testid="stSidebar"] .stMarkdown h1,
-    div[data-testid="stSidebar"] .stMarkdown h2,
-    div[data-testid="stSidebar"] .stMarkdown h3 {
-        color: #e8ecf1;
+    .btn-sair {
+        padding: 8px 18px;
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        background: transparent;
+        color: #ef4444;
+        font-size: 0.85rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-sair:hover {
+        background: rgba(239,68,68,0.1);
     }
 
     .login-container {
@@ -531,26 +552,31 @@ def render_new_record(data, all_sheets):
 
 
 # =============================================================================
-# SIDEBAR
+# HEADER
 # =============================================================================
-def render_sidebar(data, all_sheets):
-    with st.sidebar:
-        st.markdown("# 🔐 GTCON")
-        st.markdown("**Controle de Acessos**")
-        st.markdown("---")
+def render_header(data, all_sheets):
+    total_registros = sum(len(data.get(s, [])) for s in all_sheets)
+    total_abas = len(all_sheets)
 
-        if st.button("🚪 Sair", use_container_width=True):
+    st.markdown(f'''
+    <div class="topbar">
+        <div class="topbar-left">
+            <span style="font-size:1.5rem">🔐</span>
+            <span class="topbar-brand">GTCON</span>
+            <span class="topbar-info">📋 {total_registros} registros</span>
+            <span class="topbar-info">📁 {total_abas} abas</span>
+        </div>
+        <div class="topbar-right">
+            <span class="topbar-copyright">GTCON Brasil &copy; 2026</span>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([10, 1])
+    with col2:
+        if st.button("🚪 Sair"):
             st.session_state.authenticated = False
             st.rerun()
-
-        st.markdown("---")
-        st.markdown("### ℹ️ Informações")
-
-        total_registros = sum(len(data.get(s, [])) for s in all_sheets)
-        st.metric("Total de Registros", total_registros)
-        st.metric("Total de Abas", len(all_sheets))
-
-        st.markdown('<div class="sidebar-footer">GTCON Brasil &copy; 2026</div>', unsafe_allow_html=True)
 
 
 # =============================================================================
@@ -568,9 +594,9 @@ def main():
         st.error("❌ Arquivo de dados não encontrado. Verifique o caminho: `Controle_/Acessos GTCON.xlsx`")
         return
 
-    render_sidebar(data, all_sheets)
+    render_header(data, all_sheets)
 
-    st.markdown("# 🔐 GTCON - Controle de Acessos")
+    st.markdown("## Controle de Acessos")
     st.markdown("Sistema integrado de gerenciamento e visualização de acessos corporativos.")
     st.markdown("")
 
