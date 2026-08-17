@@ -6,7 +6,7 @@ from plotly.subplots import make_subplots
 from datetime import datetime, date
 import os
 import io
-import hashlib
+import json
 
 # =============================================================================
 # CONFIGURAÇÃO
@@ -293,31 +293,18 @@ def render_sectioned_tab(sheet_name, df, display_name):
             section_markers.append((idx, val_str))
 
     if not section_markers:
-        edited_df = st.data_editor(
+        edited_df = st.dataframe(
             df, use_container_width=True,
             height=min(500, 35 * len(df) + 80),
-            hide_index=True,
-            column_config={c: st.column_config.TextColumn(c, disabled=False) for c in df.columns},
-            key=f"editor_{sheet_name}",
+            hide_index=True, key=f"df_{sheet_name}",
+            on_select="rerun", selection_mode="single-row",
         )
-        col1, col2, _ = st.columns([1, 1, 4])
-        with col1:
-            if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
-                if save_sheet(sheet_name, edited_df):
-                    st.success("✅ Alterações salvas com sucesso!")
-                    st.cache_data.clear()
-                    st.rerun()
-        with col2:
-            if st.button("🔄 Recarregar", key=f"reload_{sheet_name}"):
-                st.cache_data.clear()
-                st.rerun()
         return
 
     sections = []
     first_marker_idx = section_markers[0][0]
 
     if first_marker_idx > 0:
-        header_row = df.iloc[0]
         data_before = df.iloc[1:first_marker_idx]
         data_before = data_before[data_before.iloc[:, 0].astype(str).str.strip() != ""]
         if not data_before.empty:
@@ -336,7 +323,6 @@ def render_sectioned_tab(sheet_name, df, display_name):
             chunk = chunk.reset_index(drop=True)
         sections.append((title, chunk))
 
-    all_edited = []
     for title, chunk in sections:
         if title == display_name:
             clean_title = display_name
@@ -355,27 +341,12 @@ def render_sectioned_tab(sheet_name, df, display_name):
             st.info("Nenhum registro nesta seção.")
             continue
 
-        edited = st.data_editor(
+        st.dataframe(
             chunk, use_container_width=True,
             height=min(350, 35 * len(chunk) + 80),
             hide_index=True,
-            column_config={c: st.column_config.TextColumn(c, disabled=False) for c in chunk.columns},
-            key=f"editor_{sheet_name}_{clean_title}",
+            key=f"df_{sheet_name}_{clean_title}",
         )
-        all_edited.append(edited)
-
-    col1, col2, _ = st.columns([1, 1, 4])
-    with col1:
-        if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
-            combined = pd.concat(all_edited, ignore_index=True)
-            if save_sheet(sheet_name, combined):
-                st.success("✅ Alterações salvas com sucesso!")
-                st.cache_data.clear()
-                st.rerun()
-    with col2:
-        if st.button("🔄 Recarregar", key=f"reload_{sheet_name}"):
-            st.cache_data.clear()
-            st.rerun()
 
 
 def save_sheet(sheet_name, df):
@@ -579,24 +550,92 @@ def render_data_tab(sheet_name, df, display_name):
         st.info("Esta aba não contém dados.")
         return
 
-    col_cfg = {}
-    for c in df.columns:
-        col_cfg[c] = st.column_config.TextColumn(c, disabled=False)
-
-    edited_df = st.data_editor(
+    event = st.dataframe(
         df,
         use_container_width=True,
         height=min(500, 35 * len(df) + 80),
         hide_index=True,
-        column_config=col_cfg,
-        key=f"editor_{sheet_name}",
+        key=f"df_{sheet_name}",
+        on_select="rerun",
+        selection_mode="single-row",
     )
 
-    col1, col2, col3 = st.columns([1, 1, 4])
+    selected_rows = event.selection.rows if event and event.selection else []
+
+    st.markdown("---")
+
+    tab_edit, tab_add, tab_del = st.tabs(["✏️ Editar Registro", "➕ Novo Registro", "🗑️ Excluir Registro"])
+
+    with tab_edit:
+        if not selected_rows:
+            st.info("Clique em uma linha na tabela acima para editar.")
+        else:
+            row_idx = selected_rows[0]
+            st.markdown(f"**Editando linha {row_idx + 1}**")
+            with st.form(key=f"edit_form_{sheet_name}_{row_idx}", clear_on_submit=False):
+                cols = st.columns(min(len(df.columns), 4))
+                edited_values = {}
+                for i, col in enumerate(df.columns):
+                    c = cols[i % len(cols)]
+                    current_val = str(df.iloc[row_idx][col])
+                    edited_values[col] = c.text_input(f"{col}", value=current_val, key=f"ed_{sheet_name}_{row_idx}_{col}")
+
+                col_s, col_d = st.columns(2)
+                with col_s:
+                    if st.form_submit_button("💾 Salvar Alterações", type="primary"):
+                        for col, val in edited_values.items():
+                            df.at[row_idx, col] = val
+                        if save_sheet(sheet_name, df):
+                            st.success("✅ Registro atualizado com sucesso!")
+                            st.cache_data.clear()
+                            st.rerun()
+                with col_d:
+                    if st.form_submit_button("🗑️ Excluir Esta Linha"):
+                        df = df.drop(index=row_idx).reset_index(drop=True)
+                        if save_sheet(sheet_name, df):
+                            st.success("✅ Registro excluído!")
+                            st.cache_data.clear()
+                            st.rerun()
+
+    with tab_add:
+        with st.form(key=f"add_form_{sheet_name}", clear_on_submit=True):
+            cols = st.columns(min(len(df.columns), 4))
+            new_values = {}
+            for i, col in enumerate(df.columns):
+                c = cols[i % len(cols)]
+                new_values[col] = c.text_input(f"{col}", key=f"add_{sheet_name}_{col}")
+
+            if st.form_submit_button("💾 Salvar Registro", type="primary"):
+                has_content = any(v.strip() for v in new_values.values())
+                if not has_content:
+                    st.warning("Preencha ao menos um campo.")
+                else:
+                    new_row = pd.DataFrame([new_values])
+                    updated_df = pd.concat([df, new_row], ignore_index=True)
+                    if save_sheet(sheet_name, updated_df):
+                        st.success("✅ Registro adicionado com sucesso!")
+                        st.cache_data.clear()
+                        st.rerun()
+
+    with tab_del:
+        if not selected_rows:
+            st.info("Selecione uma linha na tabela e volte nesta aba para excluir.")
+        else:
+            row_idx = selected_rows[0]
+            st.warning(f"Linha selecionada: **{df.iloc[row_idx].to_dict()}**")
+            if st.button(f"🗑️ Confirmar Exclusão da Linha {row_idx + 1}", type="primary", key=f"confirm_del_{sheet_name}_{row_idx}"):
+                df = df.drop(index=row_idx).reset_index(drop=True)
+                if save_sheet(sheet_name, df):
+                    st.success("✅ Registro excluído!")
+                    st.cache_data.clear()
+                    st.rerun()
+
+    st.markdown("---")
+    col1, col2 = st.columns(2)
     with col1:
-        if st.button("💾 Salvar Alterações", key=f"save_{sheet_name}", type="primary"):
-            if save_sheet(sheet_name, edited_df):
-                st.success("✅ Alterações salvas com sucesso!")
+        if st.button("💾 Salvar Tabela Inteira", key=f"save_all_{sheet_name}", type="primary"):
+            if save_sheet(sheet_name, df):
+                st.success("✅ Tabela salva com sucesso!")
                 st.cache_data.clear()
                 st.rerun()
     with col2:
