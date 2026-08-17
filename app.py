@@ -243,7 +243,7 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns([2, 1, 2])
+    c1, c2, c3 = st.columns([3, 1, 3])
     with c2:
         password = st.text_input("Senha", type="password", placeholder="Senha...", key="login_pwd", label_visibility="collapsed")
         if st.button("Entrar", use_container_width=True, type="primary"):
