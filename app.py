@@ -691,16 +691,21 @@ def main():
     with tab_controle:
         st.markdown("## 📁 Controle de Acessos por Aba")
         tabs_labels = [SHEET_DISPLAY_NAMES.get(s, s) for s in all_sheets]
-        sub_tabs = st.tabs(tabs_labels)
+        selected_sheet_name = st.selectbox("Selecione a aba", tabs_labels, key="ctrl_sheet_select")
 
-        for i, (sub_tab, sheet_name) in enumerate(zip(sub_tabs, all_sheets)):
-            with sub_tab:
-                display = SHEET_DISPLAY_NAMES.get(sheet_name, sheet_name)
-                sectioned_sheets = ["VAGOS", "DP"]
-                if sheet_name.upper().startswith("IMPLANTA") or sheet_name in sectioned_sheets:
-                    render_sectioned_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
-                else:
-                    render_data_tab(sheet_name, data.get(sheet_name, pd.DataFrame()), display)
+        selected_key = None
+        for s in all_sheets:
+            if SHEET_DISPLAY_NAMES.get(s, s) == selected_sheet_name:
+                selected_key = s
+                break
+
+        if selected_key:
+            display = SHEET_DISPLAY_NAMES.get(selected_key, selected_key)
+            sectioned_sheets = ["VAGOS", "DP"]
+            if selected_key.upper().startswith("IMPLANTA") or selected_key in sectioned_sheets:
+                render_sectioned_tab(selected_key, data.get(selected_key, pd.DataFrame()), display)
+            else:
+                render_data_tab(selected_key, data.get(selected_key, pd.DataFrame()), display)
 
     with tab_novo:
         render_new_record(data, all_sheets)
