@@ -309,7 +309,10 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
         data_before = data_before[data_before.iloc[:, 0].astype(str).str.strip() != ""]
         if not data_before.empty:
             data_before = data_before.copy()
-            data_before.columns = [str(c).strip() for c in data_before.columns]
+            if len(data_before.columns) == 2:
+                data_before.columns = ["E-MAIL VAGO", "ONEDRIVE"]
+            else:
+                data_before.columns = [str(c).strip() for c in data_before.columns]
             data_before = data_before.reset_index(drop=True)
             first_dept_name = str(df.columns[0]).strip().title()
             sections.append((first_dept_name, data_before))
@@ -322,6 +325,10 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
         chunk = chunk[chunk.iloc[:, 0].astype(str).str.strip().str.upper() != title.upper()]
         if not chunk.empty:
             chunk = chunk.reset_index(drop=True)
+            if len(chunk.columns) == 2:
+                chunk.columns = ["E-MAIL VAGO", "ONEDRIVE"]
+            else:
+                chunk.columns = [str(c).strip() for c in chunk.columns]
         sections.append((title, chunk))
 
     for title, chunk in sections:
@@ -432,15 +439,19 @@ def _rebuild_sectioned_df(sheet_name, original_df, edited_chunk, section_title, 
             all_section_names.append((clean, start_idx, end_idx))
 
         parts = []
+        original_cols = list(original_df.columns)
         for name, start, end in all_section_names:
             if name == section_title:
+                chunk_to_save = edited_chunk.copy()
+                if len(chunk_to_save.columns) == len(original_cols):
+                    chunk_to_save.columns = original_cols
                 if start == 0:
                     header = original_df.iloc[:1]
                     parts.append(header)
-                    parts.append(edited_chunk)
+                    parts.append(chunk_to_save)
                 else:
                     parts.append(original_df.iloc[start:start + 1])
-                    parts.append(edited_chunk)
+                    parts.append(chunk_to_save)
             else:
                 parts.append(original_df.iloc[start:end])
 
