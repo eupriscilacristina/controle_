@@ -311,7 +311,8 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
             data_before = data_before.copy()
             data_before.columns = [str(c).strip() for c in data_before.columns]
             data_before = data_before.reset_index(drop=True)
-            sections.append((display_name, data_before))
+            first_dept_name = str(df.columns[0]).strip().title()
+            sections.append((first_dept_name, data_before))
 
     for i, (start_idx, title) in enumerate(section_markers):
         end_idx = section_markers[i + 1][0] if i + 1 < len(section_markers) else len(df)
@@ -324,10 +325,7 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
         sections.append((title, chunk))
 
     for title, chunk in sections:
-        if title == display_name:
-            clean_title = display_name
-        else:
-            clean_title = title.title()
+        clean_title = title.title()
 
         st.markdown(f"""
         <div style="text-align:center; padding:10px 0; margin:16px 0 8px;
@@ -422,10 +420,11 @@ def _rebuild_sectioned_df(sheet_name, original_df, edited_chunk, section_title, 
         if not section_markers:
             return edited_chunk
 
+        first_dept_name = str(original_df.columns[0]).strip().title()
         all_section_names = []
         first_idx = section_markers[0][0]
         if first_idx > 0:
-            all_section_names.append((display_name, 0, first_idx))
+            all_section_names.append((first_dept_name, 0, first_idx))
 
         for i, (start_idx, title) in enumerate(section_markers):
             end_idx = section_markers[i + 1][0] if i + 1 < len(section_markers) else len(original_df)
@@ -435,7 +434,7 @@ def _rebuild_sectioned_df(sheet_name, original_df, edited_chunk, section_title, 
         parts = []
         for name, start, end in all_section_names:
             if name == section_title:
-                if section_title == display_name:
+                if start == 0:
                     header = original_df.iloc[:1]
                     parts.append(header)
                     parts.append(edited_chunk)
