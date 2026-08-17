@@ -281,6 +281,8 @@ def load_data():
     return data, sheets
 
 
+STANDARD_COLS_7 = ["COLABORADOR", "ANYDESK", "E-MAIL", "SENHA PADRAO ANYDESK", "ONEDRIVE", "CERTIFICADO GTCON", "MAQUINA"]
+
 def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
     st.markdown(f"### 📋 {display_name}")
 
@@ -311,6 +313,8 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
             data_before = data_before.copy()
             if len(data_before.columns) == 2:
                 data_before.columns = ["E-MAIL VAGO", "ONEDRIVE"]
+            elif len(data_before.columns) == 7:
+                data_before.columns = STANDARD_COLS_7
             else:
                 data_before.columns = [str(c).strip() for c in data_before.columns]
             data_before = data_before.reset_index(drop=True)
@@ -327,6 +331,8 @@ def render_sectioned_tab(sheet_name, df, display_name, all_data=None):
             chunk = chunk.reset_index(drop=True)
             if len(chunk.columns) == 2:
                 chunk.columns = ["E-MAIL VAGO", "ONEDRIVE"]
+            elif len(chunk.columns) == 7:
+                chunk.columns = STANDARD_COLS_7
             else:
                 chunk.columns = [str(c).strip() for c in chunk.columns]
         sections.append((title, chunk))
