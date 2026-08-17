@@ -254,6 +254,15 @@ def load_data():
                     rename_map[c] = c.replace("GTCON.1", "GTCON.ADM")
             if rename_map:
                 df = df.rename(columns=rename_map)
+        if s == "DP":
+            first_col = df.columns[0]
+            for idx, val in df[first_col].items():
+                if str(val).strip().upper() == "ROMULO":
+                    target_len = 30
+                    pad_total = target_len - len("ROMULO")
+                    pad_left = pad_total // 2
+                    pad_right = pad_total - pad_left
+                    df.at[idx, first_col] = "\u00a0" * pad_left + "ROMULO" + "\u00a0" * pad_right
         data[s] = df
     return data, sheets
 
