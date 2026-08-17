@@ -529,8 +529,9 @@ def render_sidebar(data, all_sheets):
         st.metric("Total de Registros", total_registros)
         st.metric("Total de Abas", len(all_sheets))
 
-        st.markdown("---")
-        st.markdown(f"📅 {datetime.now().strftime('%d/%m/%Y')}")
+        st.markdown("")
+        st.markdown("")
+        st.markdown("")
         st.markdown("")
         st.markdown("")
         st.markdown("")
